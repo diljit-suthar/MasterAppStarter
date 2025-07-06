@@ -21,6 +21,8 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
     private SpeechService speechService;
     private TextView txtResult;
+    private Model model;
+    private Recognizer recognizer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,34 +31,45 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
         txtResult = findViewById(R.id.txtResult);
         Button btnStart = findViewById(R.id.btnStart);
 
-        int permissionCheck = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.RECORD_AUDIO);
-        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSIONS_REQUEST_RECORD_AUDIO);
+        // Check and request microphone permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.RECORD_AUDIO},
+                    PERMISSIONS_REQUEST_RECORD_AUDIO);
         }
 
+        // Initialize Vosk model only once
+        try {
+            model = new Model(getApplicationContext().getExternalFilesDir(null) + "/model");
+            recognizer = new Recognizer(model, 16000.0f);
+        } catch (IOException e) {
+            txtResult.setText("Model init error: " + e.getMessage());
+        }
+
+        // Start listening
         btnStart.setOnClickListener(view -> {
-            try {
-                Model model = new Model(getApplicationContext().getExternalFilesDir(null) + "/model");
-                Recognizer rec = new Recognizer(model, 16000.0f);
-                speechService = new SpeechService(rec, 16000.0f);
+            if (speechService == null) {
+                speechService = new SpeechService(recognizer, 16000.0f);
                 speechService.startListening(this);
-            } catch (IOException e) {
-                txtResult.setText("Error initializing model: " + e.getMessage());
             }
         });
     }
 
     @Override
     public void onResult(String hypothesis) {
-        txtResult.setText(hypothesis);
+        // Safe single result handler
+        txtResult.setText("Result: " + hypothesis);
     }
 
     @Override
-    public void onPartialResult(String hypothesis) {}
+    public void onPartialResult(String hypothesis) {
+        // Optional
+    }
 
     @Override
     public void onFinalResult(String hypothesis) {
-        txtResult.setText(hypothesis);
+        // Avoid duplicating result output
     }
 
     @Override
@@ -67,5 +80,14 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
     @Override
     public void onTimeout() {
         txtResult.setText("Timeout");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (speechService != null) {
+            speechService.stop();
+            speechService.shutdown();
+        }
     }
 }
