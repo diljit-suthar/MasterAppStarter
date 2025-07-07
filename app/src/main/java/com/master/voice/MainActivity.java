@@ -29,8 +29,10 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Initialize the resultTextView from XML
         resultTextView = findViewById(R.id.resultTextView);
 
+        // Check for microphone permission
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
@@ -57,12 +59,14 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
     private void initModel() {
         new Thread(() -> {
             try {
+                // Load the Vosk model
                 final File modelDir = new File(getExternalFilesDir(null), "model"); // FIXED (final)
                 Model model = new Model(modelDir.getAbsolutePath());
                 Recognizer recognizer = new Recognizer(model, 16000.0f);
                 speechService = new SpeechService(recognizer, 16000.0f);
-                speechService.startListening(this);
+                speechService.startListening(this); // Start listening for speech
 
+                // Display a success message
                 runOnUiThread(() -> Toast.makeText(MainActivity.this,
                         "Model loaded from: " + modelDir.getAbsolutePath(),
                         Toast.LENGTH_LONG).show());
@@ -76,17 +80,17 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
 
     @Override
     public void onPartialResult(String hypothesis) {
-        runOnUiThread(() -> resultTextView.setText(hypothesis));
+        runOnUiThread(() -> resultTextView.setText(hypothesis));  // Show partial results
     }
 
     @Override
     public void onResult(String hypothesis) {
-        runOnUiThread(() -> resultTextView.setText(hypothesis));
+        runOnUiThread(() -> resultTextView.setText(hypothesis));  // Show final result
     }
 
     @Override
     public void onFinalResult(String hypothesis) {
-        runOnUiThread(() -> resultTextView.setText(hypothesis));
+        runOnUiThread(() -> resultTextView.setText(hypothesis));  // Show final result
     }
 
     @Override
