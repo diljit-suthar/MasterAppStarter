@@ -17,8 +17,8 @@
         android:icon="@android:drawable/ic_menu_info_details"
         android:roundIcon="@android:drawable/ic_menu_info_details"
         android:supportsRtl="true"
-        android:theme="@style/Theme.MasterApp">
-        
+        android:theme="@android:style/Theme.Material.Light">
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
